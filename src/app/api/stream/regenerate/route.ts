@@ -3,11 +3,13 @@ import { openai } from "@ai-sdk/openai";
 import { auth } from "@clerk/nextjs/server";
 import { CoreMessage, streamText } from "ai";
 import { Message } from "mem0ai";
+import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 import { v4 as uuidv4 } from "uuid";
 import { getAIContextMessages } from "~/common/lib/db/get-all-messages";
 import mem0Client from "~/common/lib/mem0-client";
 import { AiResponse, AiResponseType, Prompt, PromptType } from "~/common/models/schema";
+import validatePromptQuota from "~/common/lib/validate-prompt-quota";
 import constructContextHistory from "~/common/utils/construct-context-history";
 import devLogger from "~/common/utils/dev-logger";
 
@@ -16,6 +18,14 @@ import devLogger from "~/common/utils/dev-logger";
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
+    if (!userId) {
+      const requestHeaders = await headers();
+      const ipAddress = (requestHeaders.get("x-forwarded-for") || requestHeaders.get("x-real-ip") || "UNKNOWN").split(",")[0].trim();
+      const isAllowed = await validatePromptQuota(ipAddress);
+      if (!isAllowed) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), { status: 429 });
+      }
+    }
     const { aiResponseId, aiModel, conversationId } = await request.json();
 
     // Find AI response

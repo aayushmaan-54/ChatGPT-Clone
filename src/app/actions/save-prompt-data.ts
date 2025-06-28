@@ -4,9 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import connectToDB from "~/common/lib/connect-to-db";
 import { generateChatTitle } from "~/common/lib/generate-chat-title";
-import validatePromptQuota from "~/common/lib/validate-prompt-quota";
 import {
-  AnonymousUser,
   Conversation,
   Prompt,
 } from "~/common/models/schema";
@@ -31,23 +29,9 @@ export default async function savePromptData({
     const requestHeaders = await headers();
     const ipAddress = (requestHeaders.get("x-forwarded-for") || requestHeaders.get("x-real-ip") || "UNKNOWN").split(",")[0].trim();
 
-    // If user is not signed in, validate prompt quota
-    if (!userId) {
-      if (ipAddress === "UNKNOWN") {
-        devLogger.warn("Anonymous user request received without a detectable IP address.");
-        throw new Error("Unable to identify your connection. Please try again or sign in.");
-      }
-      const canPrompt = await validatePromptQuota(ipAddress);
-      if (!canPrompt) {
-        throw new Error("You have exceeded the prompt limit. Please try again after 24 hours or create an account to continue.");
-      }
-    }
-
-
     if (!prompt?.trim() || prompt.trim().length === 0) {
       throw new Error("Prompt is required");
     }
-
 
     // If files are attached, validate file size & count
     if (files) {
@@ -66,41 +50,6 @@ export default async function savePromptData({
       if (totalSize > MAX_TOTAL_SIZE) {
         throw new Error(`Total file size exceeds the limit of ${MAX_TOTAL_SIZE / (1024 * 1024)} MB.`);
       }
-    }
-
-
-    // If user is not signed in, update anonymous user query count
-    if (!userId) {
-      await AnonymousUser.findOneAndUpdate(
-        {
-          ipAddress: ipAddress,
-        },
-        [
-          {
-            $set: {
-              queryCount: { $add: ["$queryCount", 1] },
-              lastQueryAt: new Date(),
-            }
-          },
-          {
-            $set: {
-              firstQueryAt: {
-                $cond: {
-                  if: {
-                    $or: [
-                      { $eq: ["$firstQueryAt", null] },
-                      { $lt: ["$firstQueryAt", new Date(Date.now() - 24 * 60 * 60 * 1000)] }
-                    ]
-                  },
-                  then: new Date(),
-                  else: "$firstQueryAt"
-                }
-              }
-            }
-          }
-        ],
-        { new: true, upsert: true }
-      );
     }
 
 

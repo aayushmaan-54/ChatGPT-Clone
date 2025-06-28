@@ -13,6 +13,7 @@ import { AiResponse, Message as MessageSchema, Prompt, PromptType } from "~/comm
 import { VercelAIMessage } from "~/common/types/types";
 import constructContextHistory from "~/common/utils/construct-context-history";
 import devLogger from "~/common/utils/dev-logger";
+import validatePromptQuota from "~/common/lib/validate-prompt-quota";
 
 
 
@@ -20,6 +21,15 @@ export async function POST(request: NextRequest) {
   try {
     // Check Prompt Quota
     const { userId } = await auth();
+    let ipAddress: string | null = null;
+    if (!userId) {
+      const requestHeaders = await headers();
+      ipAddress = (requestHeaders.get("x-forwarded-for") || requestHeaders.get("x-real-ip") || "UNKNOWN").split(",")[0].trim();
+      const isAllowed = await validatePromptQuota(ipAddress);
+      if (!isAllowed) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), { status: 429 });
+      }
+    }
     const allMessages: VercelAIMessage[] = [];
 
     const { promptId, aiModel, conversationId } = await request.json();
@@ -74,12 +84,6 @@ export async function POST(request: NextRequest) {
       aiModel || DEFAULT_CHAT_MODEL,
       allContextMessages
     );
-
-    let ipAddress = null;
-    if (!userId) {
-      const requestHeaders = await headers();
-      ipAddress = (requestHeaders.get("x-forwarded-for") || requestHeaders.get("x-real-ip") || "UNKNOWN").split(",")[0].trim();
-    }
 
 
 

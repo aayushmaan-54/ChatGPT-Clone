@@ -8,11 +8,11 @@ const TWENTY_FOUR_HOURS_IN_MS = 24 * 60 * 60 * 1000;
 
 
 export default async function validatePromptQuota(ipAddress: string): Promise<boolean> { // Checks if the anonymous user has exceeded their prompt quota
-  let anonymousUser = await AnonymousUser.findOne({ ipAddress }); // Find existing anonymous user by IP address & updates the limits for user
+  let anonymousUser = await AnonymousUser.findOne({ ipAddr: ipAddress }); // Find existing anonymous user by IP address & updates the limits for user
   if (!anonymousUser) {
     try {
       anonymousUser = await AnonymousUser.create({
-        ipAddress,
+        ipAddr: ipAddress,
         queryCount: 1
       });
       return true;

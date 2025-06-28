@@ -62,6 +62,20 @@ type MessageVersionState = {
 };
 
 
+const handleRateLimitError = (error: any) => {
+  try {
+    const errorJson = JSON.parse(error.message);
+    if (errorJson.status === 429) {
+      toast.error("You have exceeded the request limit. Please sign up or log in to continue.");
+    } else {
+      toast.error(errorJson.error || 'An unexpected error occurred.');
+    }
+  } catch (e) {
+    devLogger.error('Error handling rate limit error:', e);
+    toast.error('An unexpected error occurred.');
+  }
+};
+
 
 export default function ChatPageClient({ conversationId, initialMessages = [] }: { conversationId: string, initialMessages?: MessageGroup[] }) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -147,8 +161,7 @@ export default function ChatPageClient({ conversationId, initialMessages = [] }:
       }
     },
     onError: (error) => {
-      handleErrorClient(error);
-      toast.error('An error occurred');
+      handleRateLimitError(error)
     }
   });
 
@@ -359,14 +372,16 @@ export default function ChatPageClient({ conversationId, initialMessages = [] }:
 
   // Handle regenerate
   const handleRegenerate = async (messageId: string, newModel: ChatModelId) => {
-    const versionState = messageVersionState[messageId];
-    if (!versionState) return;
-    setMessageVersionState(prev => ({ ...prev, [messageId]: { ...versionState, isGenerating: true, streamingContent: "" } }));
     try {
+      const state = messageVersionState[messageId];
+      if (!state || state.isGenerating) return;
+
+      setMessageVersionState(prev => ({ ...prev, [messageId]: { ...prev[messageId], isGenerating: true, streamingContent: "" } }));
+
       const response = await fetch('/api/stream/regenerate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aiResponseId: versionState.aiResponseId, aiModel: newModel, conversationId }),
+        body: JSON.stringify({ aiResponseId: state.aiResponseId, aiModel: newModel, conversationId }),
       });
       if (!response.body) throw new Error("Response body is null");
       const reader = response.body.getReader();
@@ -381,21 +396,10 @@ export default function ChatPageClient({ conversationId, initialMessages = [] }:
             if (animationFrameId) {
               cancelAnimationFrame(animationFrameId);
             }
-            // Ensure final state is set
-            setMessageVersionState(prev => {
-              const currentState = prev[messageId];
-              const newVersions = [...currentState.versions, { responseText: accumulatedText, aiModel: newModel, createdAt: new Date() }];
-              return {
-                ...prev,
-                [messageId]: {
-                  ...currentState,
-                  versions: newVersions,
-                  currentVersionIndex: newVersions.length - 1,
-                  isGenerating: false,
-                  streamingContent: null,
-                }
-              };
-            });
+            const finalContent = accumulatedText;
+            const newVersion: AiResponseVersionType = { responseText: finalContent, aiModel: newModel, createdAt: new Date() };
+
+            setMessageVersionState(prev => ({ ...prev, [messageId]: { ...prev[messageId], versions: [...prev[messageId].versions, newVersion], currentVersionIndex: prev[messageId].versions.length, isGenerating: false, streamingContent: null } }));
             break;
           }
           accumulatedText += decoder.decode(value);
@@ -413,9 +417,10 @@ export default function ChatPageClient({ conversationId, initialMessages = [] }:
 
       await processStream();
 
-    } catch (error) {
-      handleErrorClient(error);
-      setMessageVersionState(prev => ({ ...prev, [messageId]: { ...versionState, isGenerating: false, streamingContent: null } }));
+    } catch (error: any) {
+      handleRateLimitError(error)
+      setMessageVersionState(prev => ({ ...prev, [messageId]: { ...prev[messageId], isGenerating: false, streamingContent: null } }));
+      devLogger.error('Error regenerating response:', error);
     }
   };
 
