@@ -10,9 +10,8 @@ export default function SSOCallback() {
       <div className="text-center">
         <Loader className="w-16 h-16 mx-auto mb-4 animate-spin" />
         <p className="text-lg font-bold">Completing sign up...</p>
+        <AuthenticateWithRedirectCallback />
       </div>
-
-      <AuthenticateWithRedirectCallback />
     </div>
   );
 }
