@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getEncoding, type TiktokenEncoding } from "js-tiktoken";
 import chatModels, { ChatModelId } from "../data/chat-model";
 import devLogger from "./dev-logger";

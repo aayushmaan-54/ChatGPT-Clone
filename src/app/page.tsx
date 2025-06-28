@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { SidebarInset } from "~/components/ui/sidebar";
 import { v4 as uuidv4 } from 'uuid';
@@ -11,6 +11,7 @@ import { UploadedFile } from "~/common/types/types";
 import { FileAttachmentType } from "~/common/models/schema";
 import { usePromptDataContext } from "~/common/provider/prompt-data-provider";
 import { useRouter } from "next/navigation";
+import Loader from "~/common/components/loader";
 
 
 
@@ -46,24 +47,26 @@ export default function Home() {
 
   return (
     <>
-      <SidebarInset>
-        <div className="flex flex-col h-screen w-full">
-          <Header />
-          <SettingsDialog />
+      <Suspense fallback={<Loader />}>
+        <SidebarInset>
+          <div className="flex flex-col h-screen w-full">
+            <Header />
+            <SettingsDialog />
 
-          <main className="flex-1 flex-col flex items-center mt-62 px-7 gap-7">
-            <IntroMessage />
-            <PromptInput
-              prompt={userPrompt}
-              setPrompt={setUserPrompt}
-              files={uploadedFiles}
-              setFiles={setUploadedFiles}
-              inputRef={fileInputRef}
-              onSubmit={onPromptSubmit}
-            />
-          </main>
-        </div>
-      </SidebarInset>
+            <main className="flex-1 flex-col flex items-center mt-62 px-7 gap-7">
+              <IntroMessage />
+              <PromptInput
+                prompt={userPrompt}
+                setPrompt={setUserPrompt}
+                files={uploadedFiles}
+                setFiles={setUploadedFiles}
+                inputRef={fileInputRef}
+                onSubmit={onPromptSubmit}
+              />
+            </main>
+          </div>
+        </SidebarInset>
+      </Suspense>
     </>
   );
 }

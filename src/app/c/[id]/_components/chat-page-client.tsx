@@ -456,9 +456,6 @@ export default function ChatPageClient({ conversationId, initialMessages = [] }:
     [messageVersionState]
   );
 
-  // Handle last message
-  const lastMessage = messages[messages.length - 1];
-
 
   // Handle scroll to bottom
   useEffect(() => {
