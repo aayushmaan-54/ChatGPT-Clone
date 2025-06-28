@@ -1,0 +1,20 @@
+.scrollbar-thin::-webkit-scrollbar-track {
+	background-color: transparent;
+  border-radius: 70px;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+	width: 6px;
+  border-radius: 70px;
+	background-color: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+	border-radius: 70px;
+  cursor: default;
+	background-color: oklch(from var(--color-muted-foreground) l c h / 0.5);
+
+  &:hover {
+    background-color: oklch(from var(--color-muted-foreground) l c h / 1);
+  }
+}

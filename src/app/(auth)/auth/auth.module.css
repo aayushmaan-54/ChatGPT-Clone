@@ -1,0 +1,4 @@
+.auth-body::selection {
+  background-color: var(--color-auth-selection);
+  color: white;
+}
