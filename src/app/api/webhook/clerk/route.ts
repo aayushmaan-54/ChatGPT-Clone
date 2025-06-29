@@ -34,15 +34,14 @@ export async function POST(req: Request) {
   }
 
 
-  let payload
-  try {
-    payload = await req.json() // Parse the JSON body of the request
-  } catch (err) {
-    devLogger.error('Failed to parse request body:', err)
-    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
-  }
+  let body: string;
+  try {
+    body = await req.text();
+  } catch (err) {
+    devLogger.error('Failed to read request body as text:', err)
+    return NextResponse.json({ error: 'Failed to read body' }, { status: 400 })
+  }
 
-  const body = JSON.stringify(payload)
   const wh = new Webhook(WEBHOOK_SECRET) // Initialize the Webhook instance with the secret
   let evt: WebhookEvent // verified payload of the webhook event
 
