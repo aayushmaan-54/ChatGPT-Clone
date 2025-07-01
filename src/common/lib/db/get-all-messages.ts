@@ -21,7 +21,7 @@ const getAllMessages = async (
   conversationId: string,
   excludePromptId?: string
 ): Promise<AllPopulatedMessage[]> => {
-  connectToDB();
+  await connectToDB();
   try {
     const allMessages = await Message.find({ conversationId })
       .sort({ messageOrder: 1 })
