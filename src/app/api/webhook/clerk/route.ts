@@ -75,9 +75,9 @@ export async function POST(req: Request) {
 
       try {
         const updatedUser = await User.findOneAndUpdate(
-          { clerkId: id },
+          { _id: id },
           {
-            clerkId: id,
+            _id: id,
             email: email_addresses[0].email_address,
             name: `${first_name || ''} ${last_name || ''}`.trim() || 'Anonymous',
             profileImageUrl: image_url || null,
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
         )
 
         devLogger.log(`User ${evt.type} successful:`, {
-          clerkId: id,
+          _id: id,
           email: email_addresses[0].email_address,
           name: updatedUser.name
         })
@@ -113,7 +113,7 @@ export async function POST(req: Request) {
       }
 
       try {
-        const deleteResult = await User.deleteOne({ clerkId: deletedId })
+        const deleteResult = await User.deleteOne({ _id: deletedId })
 
         if (deleteResult.deletedCount > 0) {
           devLogger.log(`User deleted successfully: ${deletedId}`)
