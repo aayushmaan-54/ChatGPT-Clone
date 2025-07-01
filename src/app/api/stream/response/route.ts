@@ -14,11 +14,15 @@ import { VercelAIMessage } from "~/common/types/types";
 import constructContextHistory from "~/common/utils/construct-context-history";
 import devLogger from "~/common/utils/dev-logger";
 import validatePromptQuota from "~/common/lib/validate-prompt-quota";
+import connectToDB from "~/common/lib/connect-to-db";
 
 
 
 export async function POST(request: NextRequest) {
   try {
+    // Establish database connection first
+    await connectToDB();
+
     // Check Prompt Quota
     const { userId } = await auth();
     let ipAddress: string | null = null;

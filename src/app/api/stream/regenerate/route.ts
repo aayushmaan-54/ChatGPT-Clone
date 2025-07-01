@@ -12,11 +12,15 @@ import { AiResponse, AiResponseType, Prompt, PromptType } from "~/common/models/
 import validatePromptQuota from "~/common/lib/validate-prompt-quota";
 import constructContextHistory from "~/common/utils/construct-context-history";
 import devLogger from "~/common/utils/dev-logger";
+import connectToDB from "~/common/lib/connect-to-db";
 
 
 
 export async function POST(request: NextRequest) {
   try {
+    // Establish database connection first
+    await connectToDB();
+
     const { userId } = await auth();
     if (!userId) {
       const requestHeaders = await headers();

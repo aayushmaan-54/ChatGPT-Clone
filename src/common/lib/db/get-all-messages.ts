@@ -104,7 +104,7 @@ export async function getAIContextMessages(
   conversationId: string,
   excludePromptId?: string
 ): Promise<VercelAIMessage[]> {
-  connectToDB();
+  await connectToDB();
   try {
     const messages = await getAllMessages(conversationId, excludePromptId);
     const aiContextMessages: VercelAIMessage[] = [];
