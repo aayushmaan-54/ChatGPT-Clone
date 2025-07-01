@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 
 // Schemas
 const userSchema = new mongoose.Schema({
-  _id: { type: String, required: true, index: true, unique: true }, // Clerk ID
+  _id: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   name: { type: String },
   profileImageUrl: { type: String },
@@ -20,7 +20,7 @@ const anonymousUserSchema = new mongoose.Schema({
 
 
 const conversationSchema = new mongoose.Schema({
-  _id: { type: String, required: true, index: true, unique: true }, // Client Generated ID
+  _id: { type: String, required: true }, // Client Generated ID (automatically indexed and unique)
   userId: { type: String, ref: 'User' }, // Clerk ID
   ipAddr: { type: String, ref: 'AnonymousUser' }, // For anonymous users
   conversationTitle: { type: String, default: 'New Chat', index: true },

@@ -26,7 +26,6 @@ export async function POST(req: Request) {
   const svixTimestamp = headerPayload.get('svix-timestamp'); // Clerk uses 'svix-timestamp' for webhook timestamp
   const svixSignature = headerPayload.get('svix-signature'); // Clerk uses 'svix-signature' for webhook signature
 
-
   // Check if all required svix headers are present
   if (!svixId || !svixTimestamp || !svixSignature) {
     devLogger.error('Missing required svix headers')
@@ -34,13 +33,13 @@ export async function POST(req: Request) {
   }
 
 
-  let body: string;
-  try {
-    body = await req.text();
-  } catch (err) {
-    devLogger.error('Failed to read request body as text:', err)
-    return NextResponse.json({ error: 'Failed to read body' }, { status: 400 })
-  }
+    let body: string;
+  try {
+    body = await req.text();
+  } catch (err) {
+    devLogger.error('Failed to read request body as text:', err)
+    return NextResponse.json({ error: 'Failed to read body' }, { status: 400 })
+  }
 
   const wh = new Webhook(WEBHOOK_SECRET) // Initialize the Webhook instance with the secret
   let evt: WebhookEvent // verified payload of the webhook event
@@ -62,6 +61,7 @@ export async function POST(req: Request) {
     case 'user.created':
     case 'user.updated':
       const { id, email_addresses, first_name, last_name, image_url } = evt.data
+      const profile_image_url = (evt.data as any).profile_image_url
 
       if (!id) {
         devLogger.error('User ID missing in webhook data')
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
             _id: id,
             email: email_addresses[0].email_address,
             name: `${first_name || ''} ${last_name || ''}`.trim() || 'Anonymous',
-            profileImageUrl: image_url || null,
+            profileImageUrl: image_url || profile_image_url || null,
             updatedAt: new Date(),
           },
           {
